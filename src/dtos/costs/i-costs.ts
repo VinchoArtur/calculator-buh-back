@@ -1,5 +1,5 @@
 export interface CostRequest {
-  id?: number;
+  id?: string;
   name: string;
   price: number;
   hourlyRate: number;
