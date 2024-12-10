@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Logger, Post } from '@nestjs/common';
 import { CostRequest } from 'src/dtos/costs/i-costs';
 import { AddCostsService } from 'src/services/add-costs/add-costs.service';
 
@@ -6,12 +6,16 @@ import { AddCostsService } from 'src/services/add-costs/add-costs.service';
 export class AddCostsController {
   constructor(private readonly addCostService: AddCostsService) {}
 
+  private readonly logger = new Logger(AddCostsController.name);
+
   @Post()
-  async addCost(@Body() data: CostRequest) {
+  async addCost(@Body() data: CostRequest): Promise<string> {
     try {
-      return await this.addCostService.addCosts(data);
+      this.logger.error('Received data:', JSON.stringify(data));
+      return await this.addCostService.addCosts(data); // Успешный результат возвращается напрямую
     } catch (error) {
-      return `error: ${error.message}`;
+      this.logger.error('Error while adding cost:', error.message);
+      throw error; // Перебрасываем ошибку, чтобы клиент получил соответствующий код ответа
     }
   }
 
