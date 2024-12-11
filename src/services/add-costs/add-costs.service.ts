@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { existsSync } from 'fs';
 import { mkdir, readFile, writeFile } from 'fs/promises';
 import { join } from 'path';
+import { FileService } from 'src/controllers/file/file.service';
 import { CostRequest } from 'src/dtos/costs/i-costs';
 import { v4 } from 'uuid';
 
@@ -11,6 +12,8 @@ export class AddCostsService {
   private readonly fileName = `data.json`;
   private readonly filePath = join(this.assetsFolder, this.fileName);
   private readonly Logger = new Logger(AddCostsService.name);
+
+  constructor(private readonly fileService: FileService) {}
 
   public async addCosts(cost: CostRequest) {
     try {
@@ -67,5 +70,27 @@ export class AddCostsService {
     await writeFile(this.filePath, JSON.stringify(costs, null, 2), 'utf8');
 
     return `Cost with ID ${id} deleted successfully`;
+  }
+
+  async updateCost(
+    id: string,
+    updatedCost: Partial<CostRequest>,
+  ): Promise<CostRequest> {
+    this.Logger.log(updatedCost);
+    const costs = await this.fileService.readFile<CostRequest>(this.filePath);
+    const index = costs.findIndex((cost) => cost.id === id);
+
+    if (index === -1) {
+      throw new NotFoundException(`Cost with ID ${id} not found`);
+    }
+
+    const updatedRecord = { ...costs[index], ...updatedCost };
+    this.Logger.log(updatedRecord);
+
+    costs[index] = updatedRecord;
+
+    await this.fileService.writeFile(this.filePath, costs);
+
+    return updatedRecord;
   }
 }
