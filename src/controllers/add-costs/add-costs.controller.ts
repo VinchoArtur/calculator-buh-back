@@ -17,11 +17,11 @@ export class AddCostsController {
   private readonly logger = new Logger(AddCostsController.name);
 
   @Post()
-  async addCost(@Body() data: CostRequest): Promise<{ message: string }> {
+  async addCost(@Body() data: CostRequest): Promise<{ cost: CostRequest }> {
     try {
       this.logger.error('Received data:', JSON.stringify(data));
       const response = await this.addCostService.addCosts(data);
-      return { message: response }; // Успешный результат возвращается напрямую
+      return { cost: response }; // Успешный результат возвращается напрямую
     } catch (error) {
       this.logger.error('Error while adding cost:', error.message);
       throw error; // Перебрасываем ошибку, чтобы клиент получил соответствующий код ответа

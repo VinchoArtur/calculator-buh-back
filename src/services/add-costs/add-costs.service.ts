@@ -12,7 +12,7 @@ export class AddCostsService {
   private readonly filePath = join(this.assetsFolder, this.fileName);
   private readonly Logger = new Logger(AddCostsService.name);
 
-  public async addCosts(cost: CostRequest) {
+  public async addCosts(cost: CostRequest): Promise<CostRequest> {
     try {
       const newCost: CostRequest = { ...cost, id: v4() };
       this.Logger.log(cost);
@@ -31,7 +31,7 @@ export class AddCostsService {
 
       await writeFile(this.filePath, JSON.stringify(costs, null, 2), 'utf8');
 
-      return `Successfully`;
+      return newCost;
     } catch (e) {
       return e;
     }
