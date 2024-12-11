@@ -17,10 +17,11 @@ export class AddCostsController {
   private readonly logger = new Logger(AddCostsController.name);
 
   @Post()
-  async addCost(@Body() data: CostRequest): Promise<string> {
+  async addCost(@Body() data: CostRequest): Promise<{ message: string }> {
     try {
       this.logger.error('Received data:', JSON.stringify(data));
-      return await this.addCostService.addCosts(data); // Успешный результат возвращается напрямую
+      const response = await this.addCostService.addCosts(data);
+      return { message: response }; // Успешный результат возвращается напрямую
     } catch (error) {
       this.logger.error('Error while adding cost:', error.message);
       throw error; // Перебрасываем ошибку, чтобы клиент получил соответствующий код ответа
@@ -30,16 +31,17 @@ export class AddCostsController {
   @Get()
   async getCosts() {
     try {
-      return await this.addCostService.getCosts();
+      return { costs: await this.addCostService.getCosts() };
     } catch (error) {
       return `error: ${error.message}`;
     }
   }
 
   @Delete(':id')
-  async deleteCost(@Param('id') id: string): Promise<string> {
+  async deleteCost(@Param('id') id: string): Promise<{ message: string }> {
     try {
-      return await this.addCostService.deleteCostById(id);
+      const response = await this.addCostService.deleteCostById(id);
+      return { message: response };
     } catch (error) {
       this.logger.error('Error while deleting cost:', error.message);
       throw error;

@@ -31,7 +31,7 @@ export class AddCostsService {
 
       await writeFile(this.filePath, JSON.stringify(costs, null, 2), 'utf8');
 
-      return `Cost added successfully! Saved at: ${this.filePath}`;
+      return `Successfully`;
     } catch (e) {
       return e;
     }
@@ -61,7 +61,6 @@ export class AddCostsService {
     if (index === -1) {
       throw new NotFoundException(`Cost with ID ${id} not found`);
     }
-
     costs.splice(index, 1);
 
     await writeFile(this.filePath, JSON.stringify(costs, null, 2), 'utf8');
