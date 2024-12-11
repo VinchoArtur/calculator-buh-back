@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Logger, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Logger,
+  Param,
+  Post,
+} from '@nestjs/common';
 import { CostRequest } from 'src/dtos/costs/i-costs';
 import { AddCostsService } from 'src/services/add-costs/add-costs.service';
 
@@ -25,6 +33,16 @@ export class AddCostsController {
       return await this.addCostService.getCosts();
     } catch (error) {
       return `error: ${error.message}`;
+    }
+  }
+
+  @Delete(':id')
+  async deleteCost(@Param('id') id: string): Promise<string> {
+    try {
+      return await this.addCostService.deleteCostById(id);
+    } catch (error) {
+      this.logger.error('Error while deleting cost:', error.message);
+      throw error;
     }
   }
 }
