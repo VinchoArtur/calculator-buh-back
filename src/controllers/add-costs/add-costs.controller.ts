@@ -5,6 +5,7 @@ import {
   Get,
   Logger,
   Param,
+  Patch,
   Post,
 } from '@nestjs/common';
 import { CostRequest } from 'src/dtos/costs/i-costs';
@@ -46,5 +47,13 @@ export class AddCostsController {
       this.logger.error('Error while deleting cost:', error.message);
       throw error;
     }
+  }
+
+  @Patch(':id')
+  async updateCost(
+    @Param('id') id: string,
+    @Body() updatedCost: Partial<CostRequest>,
+  ): Promise<CostRequest> {
+    return await this.addCostService.updateCost(id, updatedCost);
   }
 }
