@@ -1,7 +1,8 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { existsSync } from 'fs';
-import { mkdir, readFile, writeFile } from 'fs/promises';
+import { mkdir } from 'fs/promises';
 import { join } from 'path';
+import { FileService } from 'src/services/file/file.service';
 import { CostRequest } from 'src/dtos/costs/i-costs';
 import { v4 } from 'uuid';
 
@@ -12,49 +13,36 @@ export class AddCostsService {
   private readonly filePath = join(this.assetsFolder, this.fileName);
   private readonly Logger = new Logger(AddCostsService.name);
 
+  constructor(private readonly fileService: FileService) {}
+
   public async addCosts(cost: CostRequest): Promise<CostRequest> {
     try {
       const newCost: CostRequest = { ...cost, id: v4() };
-      this.Logger.log(cost);
+      this.Logger.log(newCost);
+
       if (!existsSync(this.assetsFolder)) {
         await mkdir(this.assetsFolder, { recursive: true });
       }
 
-      let costs: CostRequest[] = [];
-
-      if (existsSync(this.filePath)) {
-        const existingData = await readFile(this.filePath, 'utf8');
-        costs = JSON.parse(existingData);
-      }
+      const costs = await this.fileService.readFile<CostRequest>(this.filePath);
 
       costs.push(newCost);
 
-      await writeFile(this.filePath, JSON.stringify(costs, null, 2), 'utf8');
+      await this.fileService.writeFile(this.filePath, costs);
 
       return newCost;
     } catch (e) {
-      return e;
+      this.Logger.error('Error adding cost:', e.message);
+      throw e;
     }
   }
 
   public async getCosts(): Promise<CostRequest[]> {
-    if (!existsSync(this.filePath)) {
-      return [];
-    }
-
-    const data = await readFile(this.filePath, 'utf8');
-
-    return JSON.parse(data);
+    return this.fileService.readFile<CostRequest>(this.filePath);
   }
 
   public async deleteCostById(id: string): Promise<string> {
-    if (!existsSync(this.filePath)) {
-      throw new NotFoundException('Data file not found');
-    }
-
-    const data = await readFile(this.filePath, 'utf8');
-
-    const costs: CostRequest[] = JSON.parse(data);
+    const costs = await this.fileService.readFile<CostRequest>(this.filePath);
 
     const index = costs.findIndex((cost) => cost.id === id);
 
@@ -63,8 +51,30 @@ export class AddCostsService {
     }
     costs.splice(index, 1);
 
-    await writeFile(this.filePath, JSON.stringify(costs, null, 2), 'utf8');
+    await this.fileService.writeFile(this.filePath, costs);
 
     return `Cost with ID ${id} deleted successfully`;
+  }
+
+  async updateCost(
+    id: string,
+    updatedCost: Partial<CostRequest>,
+  ): Promise<CostRequest> {
+    this.Logger.log(updatedCost);
+    const costs = await this.fileService.readFile<CostRequest>(this.filePath);
+    const index = costs.findIndex((cost) => cost.id === id);
+
+    if (index === -1) {
+      throw new NotFoundException(`Cost with ID ${id} not found`);
+    }
+
+    const updatedRecord = { ...costs[index], ...updatedCost };
+    this.Logger.log(updatedRecord);
+
+    costs[index] = updatedRecord;
+
+    await this.fileService.writeFile(this.filePath, costs);
+
+    return updatedRecord;
   }
 }
