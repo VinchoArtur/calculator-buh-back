@@ -15,7 +15,7 @@ export class AddCostsService {
 
   constructor(private readonly fileService: FileService) {}
 
-  public async addCosts(cost: CostRequest) {
+  public async addCosts(cost: CostRequest): Promise<CostRequest> {
     try {
       const newCost: CostRequest = { ...cost, id: v4() };
       this.Logger.log(newCost);
@@ -30,7 +30,7 @@ export class AddCostsService {
 
       await this.fileService.writeFile(this.filePath, costs);
 
-      return `Cost added successfully! Saved at: ${this.filePath}`;
+      return newCost;
     } catch (e) {
       this.Logger.error('Error adding cost:', e.message);
       throw e;
@@ -49,7 +49,6 @@ export class AddCostsService {
     if (index === -1) {
       throw new NotFoundException(`Cost with ID ${id} not found`);
     }
-
     costs.splice(index, 1);
 
     await this.fileService.writeFile(this.filePath, costs);
