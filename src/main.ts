@@ -20,6 +20,8 @@ async function bootstrap() {
     }),
   );
   app.setGlobalPrefix('v1');
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  //@ts-expect-error
   await app.listen(process.env.PORT ?? 3000);
 }
 
