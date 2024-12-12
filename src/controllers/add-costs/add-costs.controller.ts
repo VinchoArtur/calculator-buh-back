@@ -41,6 +41,7 @@ export class AddCostsController {
   @Delete(':id')
   async deleteCost(@Param('id') id: string): Promise<{ message: string }> {
     try {
+      this.logger.log(id);
       const response = await this.addCostService.deleteCostById(id);
       return { message: response };
     } catch (error) {
