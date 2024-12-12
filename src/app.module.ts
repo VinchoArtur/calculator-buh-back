@@ -5,7 +5,7 @@ import { AddCostsController } from './controllers/add-costs/add-costs.controller
 import { AddCostsService } from './services/add-costs/add-costs.service';
 import { AuthController } from './controllers/auth/auth.controller';
 import { AuthService } from './services/auth/auth.service';
-import { FileService } from './controllers/file/file.service';
+import { FileService } from './services/file/file.service';
 
 @Module({
   imports: [],

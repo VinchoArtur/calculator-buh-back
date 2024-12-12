@@ -2,7 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { existsSync } from 'fs';
 import { mkdir } from 'fs/promises';
 import { join } from 'path';
-import { FileService } from 'src/controllers/file/file.service';
+import { FileService } from 'src/services/file/file.service';
 import { CostRequest } from 'src/dtos/costs/i-costs';
 import { v4 } from 'uuid';
 
