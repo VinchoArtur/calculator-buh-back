@@ -8,7 +8,7 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
-import { CostRequest } from 'src/dtos/costs/i-costs';
+import { CostRequest } from 'src/dtos/costs/costs.dto.';
 import { AddCostsService } from 'src/services/add-costs/add-costs.service';
 
 @Controller('add-costs')
