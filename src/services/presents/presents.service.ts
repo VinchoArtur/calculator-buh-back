@@ -15,7 +15,7 @@ export class PresentsService {
 
   constructor(private readonly fileService: FileService) {}
 
-  public async addPresent(present: PresentRequest): Promise<PresentRequest> {
+  public async addData(present: PresentRequest): Promise<PresentRequest> {
     try {
       const newPresent = { ...present, id: v4() };
       this.Logger.log(newPresent);
@@ -35,7 +35,7 @@ export class PresentsService {
     }
   }
 
-  public async getPresents(): Promise<PresentRequest[]> {
+  public async getData(): Promise<PresentRequest[]> {
     return this.fileService.readFile<PresentRequest>(this.filePath);
   }
 
@@ -55,7 +55,7 @@ export class PresentsService {
     return `Present with ID ${id} deleted successfully`;
   }
 
-  public async updatePresent(
+  public async updateData(
     id: string,
     updatedPresent: Partial<PresentRequest>,
   ): Promise<PresentRequest> {
