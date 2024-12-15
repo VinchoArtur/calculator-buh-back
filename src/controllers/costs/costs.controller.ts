@@ -8,14 +8,14 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
-import { CostRequest } from 'src/dtos/costs/i-costs';
-import { AddCostsService } from 'src/services/add-costs/add-costs.service';
+import { CostRequest } from 'src/dtos/costs/costs.dto.';
+import { CostsService } from 'src/services/costs/costs.service';
 
-@Controller('add-costs')
-export class AddCostsController {
-  constructor(private readonly addCostService: AddCostsService) {}
+@Controller('costs')
+export class CostsController {
+  constructor(private readonly addCostService: CostsService) {}
 
-  private readonly logger = new Logger(AddCostsController.name);
+  private readonly logger = new Logger(CostsController.name);
 
   @Post()
   async addCost(@Body() data: CostRequest): Promise<{ cost: CostRequest }> {
@@ -34,7 +34,7 @@ export class AddCostsController {
     try {
       return { costs: await this.addCostService.getCosts() };
     } catch (error) {
-      return `error: ${error.message}`;
+      throw error;
     }
   }
 
@@ -54,7 +54,12 @@ export class AddCostsController {
   async updateCost(
     @Param('id') id: string,
     @Body() updatedCost: Partial<CostRequest>,
-  ): Promise<CostRequest> {
-    return await this.addCostService.updateCost(id, updatedCost);
+  ): Promise<{ updatedCost: CostRequest }> {
+    try {
+      const response = await this.addCostService.updateCost(id, updatedCost);
+      return { updatedCost: response };
+    } catch (error) {
+      throw error;
+    }
   }
 }

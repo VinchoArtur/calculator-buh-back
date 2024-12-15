@@ -3,15 +3,15 @@ import { existsSync } from 'fs';
 import { mkdir } from 'fs/promises';
 import { join } from 'path';
 import { FileService } from 'src/services/file/file.service';
-import { CostRequest } from 'src/dtos/costs/i-costs';
+import { CostRequest } from 'src/dtos/costs/costs.dto.';
 import { v4 } from 'uuid';
 
 @Injectable()
-export class AddCostsService {
+export class CostsService {
   private readonly assetsFolder = join(__dirname, '..', '..', '..', 'assets');
-  private readonly fileName = `data.json`;
+  private readonly fileName = `data-costs.json`;
   private readonly filePath = join(this.assetsFolder, this.fileName);
-  private readonly Logger = new Logger(AddCostsService.name);
+  private readonly Logger = new Logger(CostsService.name);
 
   constructor(private readonly fileService: FileService) {}
 
