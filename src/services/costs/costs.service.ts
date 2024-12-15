@@ -15,7 +15,7 @@ export class CostsService {
 
   constructor(private readonly fileService: FileService) {}
 
-  public async addCosts(cost: CostRequest): Promise<CostRequest> {
+  public async addData(cost: CostRequest): Promise<CostRequest> {
     try {
       const newCost: CostRequest = { ...cost, id: v4() };
       this.Logger.log(newCost);
@@ -37,11 +37,11 @@ export class CostsService {
     }
   }
 
-  public async getCosts(): Promise<CostRequest[]> {
+  public async getData(): Promise<CostRequest[]> {
     return this.fileService.readFile<CostRequest>(this.filePath);
   }
 
-  public async deleteCostById(id: string): Promise<string> {
+  public async deleteDataById(id: string): Promise<string> {
     const costs = await this.fileService.readFile<CostRequest>(this.filePath);
 
     const index = costs.findIndex((cost) => cost.id === id);
@@ -56,7 +56,7 @@ export class CostsService {
     return `Cost with ID ${id} deleted successfully`;
   }
 
-  async updateCost(
+  async updateData(
     id: string,
     updatedCost: Partial<CostRequest>,
   ): Promise<CostRequest> {
