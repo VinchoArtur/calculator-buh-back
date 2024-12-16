@@ -1,56 +1,27 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { join } from 'path';
-import { v4 } from 'uuid';
-import { FileService } from '../file/file.service';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PresentRequest } from 'src/dtos/presents/presents.dto';
-import { existsSync } from 'fs';
-import { mkdir } from 'fs/promises';
+import { PresentsRepository } from '../../repositories/presents/present.repository';
 
 @Injectable()
 export class PresentsService {
-  private readonly assetsFolder = join(__dirname, '..', '..', '..', 'assets');
-  private readonly fileName = 'data-presents.json';
-  private readonly filePath = join(this.assetsFolder, this.fileName);
-  private readonly Logger = new Logger(PresentsService.name);
-
-  constructor(private readonly fileService: FileService) {}
+  constructor(private readonly presentsRepository: PresentsRepository) {}
 
   public async addPresent(present: PresentRequest): Promise<PresentRequest> {
-    try {
-      const newPresent = { ...present, id: v4() };
-      this.Logger.log(newPresent);
-
-      if (!existsSync(this.assetsFolder)) {
-        await mkdir(this.assetsFolder, { recursive: true });
-      }
-
-      const presents = await this.fileService.readFile<PresentRequest>(
-        this.filePath,
-      );
-      presents.push(newPresent);
-      await this.fileService.writeFile(this.filePath, presents);
-      return newPresent;
-    } catch (error) {
-      throw error;
-    }
+    return await this.presentsRepository.create(present);
   }
 
   public async getPresents(): Promise<PresentRequest[]> {
-    return this.fileService.readFile<PresentRequest>(this.filePath);
+    return this.presentsRepository.findAll();
   }
 
   public async deletePresentById(id: string): Promise<string> {
-    const presents = await this.fileService.readFile<PresentRequest>(
-      this.filePath,
-    );
-    const index = presents.findIndex((present) => present.id === id);
+    const present = await this.presentsRepository.findById(id);
 
-    if (index === -1) {
+    if (!present) {
       throw new NotFoundException(`Present with ID ${id} not found`);
     }
 
-    presents.splice(index, 1);
-    await this.fileService.writeFile(this.filePath, presents);
+    await this.presentsRepository.delete(id);
 
     return `Present with ID ${id} deleted successfully`;
   }
@@ -59,19 +30,12 @@ export class PresentsService {
     id: string,
     updatedPresent: Partial<PresentRequest>,
   ): Promise<PresentRequest> {
-    const presents = await this.fileService.readFile<PresentRequest>(
-      this.filePath,
-    );
-    const index = presents.findIndex((present) => present.id === id);
+    const present = await this.presentsRepository.findById(id);
 
-    if (index === -1) {
+    if (!present) {
       throw new NotFoundException(`Present with ID ${id} not found`);
     }
 
-    const updatedRecord = { ...presents[index], ...updatedPresent };
-    presents[index] = updatedRecord;
-
-    await this.fileService.writeFile(this.filePath, presents);
-    return updatedRecord;
+    return await this.presentsRepository.update(id, updatedPresent);
   }
 }
