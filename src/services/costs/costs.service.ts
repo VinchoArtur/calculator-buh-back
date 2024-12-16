@@ -1,80 +1,41 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { existsSync } from 'fs';
-import { mkdir } from 'fs/promises';
-import { join } from 'path';
-import { FileService } from 'src/services/file/file.service';
-import { CostRequest } from 'src/dtos/costs/costs.dto.';
-import { v4 } from 'uuid';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { CostsRepository } from '../../repositories/costs/costs.repository';
+import { CostRequest } from '../../dtos/costs/costs.dto.';
 
 @Injectable()
 export class CostsService {
-  private readonly assetsFolder = join(__dirname, '..', '..', '..', 'assets');
-  private readonly fileName = `data-costs.json`;
-  private readonly filePath = join(this.assetsFolder, this.fileName);
-  private readonly Logger = new Logger(CostsService.name);
-
-  constructor(private readonly fileService: FileService) {}
+  constructor(private readonly costsRepository: CostsRepository) {}
 
   public async addCosts(cost: CostRequest): Promise<CostRequest> {
-    try {
-      const newCost: CostRequest = { ...cost, id: v4() };
-      this.Logger.log(newCost);
-
-      if (!existsSync(this.assetsFolder)) {
-        await mkdir(this.assetsFolder, { recursive: true });
-      }
-
-      const costs = await this.fileService.readFile<CostRequest>(this.filePath);
-
-      costs.push(newCost);
-
-      await this.fileService.writeFile(this.filePath, costs);
-
-      return newCost;
-    } catch (e) {
-      this.Logger.error('Error adding cost:', e.message);
-      throw e;
-    }
+    return await this.costsRepository.create(cost);
   }
 
   public async getCosts(): Promise<CostRequest[]> {
-    return this.fileService.readFile<CostRequest>(this.filePath);
+    return await this.costsRepository.findAll();
   }
 
   public async deleteCostById(id: string): Promise<string> {
-    const costs = await this.fileService.readFile<CostRequest>(this.filePath);
+    const cost = await this.costsRepository.findById(id);
 
-    const index = costs.findIndex((cost) => cost.id === id);
-
-    if (index === -1) {
+    if (!cost) {
       throw new NotFoundException(`Cost with ID ${id} not found`);
     }
-    costs.splice(index, 1);
 
-    await this.fileService.writeFile(this.filePath, costs);
+    await this.costsRepository.delete(id);
 
     return `Cost with ID ${id} deleted successfully`;
   }
 
-  async updateCost(
+  public async updateCost(
     id: string,
     updatedCost: Partial<CostRequest>,
   ): Promise<CostRequest> {
-    this.Logger.log(updatedCost);
-    const costs = await this.fileService.readFile<CostRequest>(this.filePath);
-    const index = costs.findIndex((cost) => cost.id === id);
+    const cost = await this.costsRepository.findById(id);
 
-    if (index === -1) {
+    if (!cost) {
       throw new NotFoundException(`Cost with ID ${id} not found`);
     }
 
-    const updatedRecord = { ...costs[index], ...updatedCost };
-    this.Logger.log(updatedRecord);
-
-    costs[index] = updatedRecord;
-
-    await this.fileService.writeFile(this.filePath, costs);
-
-    return updatedRecord;
+    return await this.costsRepository.update(id, updatedCost);
   }
 }
