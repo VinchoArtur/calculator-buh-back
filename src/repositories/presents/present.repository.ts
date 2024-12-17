@@ -8,7 +8,14 @@ export class PresentsRepository {
 
   async create(present: PresentRequest) {
     return this.prisma.present.create({
-      data: present,
+      data: {
+        name: present.name,
+        price: present.price,
+        description: present.description,
+        group: present.groupId
+          ? { connect: { id: present.groupId } }
+          : undefined,
+      },
     });
   }
 

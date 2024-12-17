@@ -8,7 +8,15 @@ export class CostsRepository {
 
   async create(cost: CostRequest) {
     return this.prisma.cost.create({
-      data: cost,
+      data: {
+        name: cost.name,
+        price: cost.price,
+        hourlyRate: cost.hourlyRate,
+        hours: cost.hours,
+        costWithoutProfit: cost.costWithoutProfit,
+        costWithProfit: cost.costWithProfit,
+        group: cost.groupId ? { connect: { id: cost.groupId } } : undefined,
+      },
     });
   }
 
