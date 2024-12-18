@@ -21,4 +21,8 @@ export class CostRequest {
 
   @IsNumber()
   costWithProfit: number;
+
+  @IsOptional()
+  @IsNumber()
+  groupId?: number;
 }

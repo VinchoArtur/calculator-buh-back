@@ -11,6 +11,9 @@ import { PresentsService } from './services/presents/presents.service';
 import { PrismaModule } from './modules/prisma/prisma.module';
 import { CostsRepository } from './repositories/costs/costs.repository';
 import { PresentsRepository } from './repositories/presents/present.repository';
+import { GroupsController } from './controllers/groups/groups.controller';
+import { GroupsRepository } from './repositories/groups/groups.repository';
+import { GroupsService } from './services/groups/groups.service';
 
 @Module({
   imports: [PrismaModule],
@@ -19,6 +22,7 @@ import { PresentsRepository } from './repositories/presents/present.repository';
     CostsController,
     AuthController,
     PresentsController,
+    GroupsController,
   ],
   providers: [
     AppService,
@@ -28,6 +32,8 @@ import { PresentsRepository } from './repositories/presents/present.repository';
     PresentsService,
     CostsRepository,
     PresentsRepository,
+    GroupsRepository,
+    GroupsService,
   ],
 })
 export class AppModule {}

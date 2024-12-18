@@ -13,4 +13,8 @@ export class PresentRequest {
 
   @IsString()
   description: string;
+
+  @IsOptional()
+  @IsNumber()
+  groupId?: number;
 }
