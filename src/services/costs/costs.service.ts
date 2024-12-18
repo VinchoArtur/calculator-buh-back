@@ -6,15 +6,15 @@ import { CostRequest } from '../../dtos/costs/costs.dto.';
 export class CostsService {
   constructor(private readonly costsRepository: CostsRepository) {}
 
-  public async addCosts(cost: CostRequest): Promise<CostRequest> {
+  public async addData(cost: CostRequest): Promise<CostRequest> {
     return await this.costsRepository.create(cost);
   }
 
-  public async getCosts(): Promise<CostRequest[]> {
+  public async getData(): Promise<CostRequest[]> {
     return await this.costsRepository.findAll();
   }
 
-  public async deleteCostById(id: string): Promise<string> {
+  public async deleteData(id: string): Promise<string> {
     const cost = await this.costsRepository.findById(id);
 
     if (!cost) {
@@ -26,7 +26,7 @@ export class CostsService {
     return `Cost with ID ${id} deleted successfully`;
   }
 
-  public async updateCost(
+  public async updateData(
     id: string,
     updatedCost: Partial<CostRequest>,
   ): Promise<CostRequest> {

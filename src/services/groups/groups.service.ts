@@ -10,9 +10,10 @@ import { GroupsRepository } from 'src/repositories/groups/groups.repository';
 export class GroupsService {
   constructor(private readonly groupsRepository: GroupsRepository) {}
 
-  async createGroup(groupName: string): Promise<{ groupId: number }> {
-    const existingGroup =
-      await this.groupsRepository.findGroupByName(groupName);
+  async addData(data: { groupName: string }): Promise<{ groupId: number }> {
+    const existingGroup = await this.groupsRepository.findGroupByName(
+      data.groupName,
+    );
 
     if (existingGroup) {
       throw new BadRequestException({
@@ -21,11 +22,11 @@ export class GroupsService {
       });
     }
 
-    const newGroup = await this.groupsRepository.createGroup(groupName);
+    const newGroup = await this.groupsRepository.createGroup(data.groupName);
     return { groupId: newGroup.id };
   }
 
-  async getAllGroups() {
+  async getData() {
     return this.groupsRepository.getAllGroups();
   }
 
@@ -39,33 +40,25 @@ export class GroupsService {
     return group;
   }
 
-  async getGroupByName(groupName: string) {
-    const group = await this.groupsRepository.findGroupByName(groupName);
-
-    if (!group) {
-      throw new NotFoundException(`Group with name ${groupName} not found`);
-    }
-
-    return group;
-  }
-
-  async updateGroup(id: number, data: GroupRequest) {
-    const group = await this.getGroupById(id);
+  async updateData(id: number, data: GroupRequest) {
+    const group = await this.getGroupById(+id);
 
     if (!group) {
       throw new NotFoundException(`Group with ID ${id} not found`);
     }
 
-    return this.groupsRepository.updateGroup(id, data);
+    return this.groupsRepository.updateGroup(+id, data);
   }
 
-  async deleteGroupById(id: number) {
-    const group = await this.getGroupById(id);
+  async deleteData(id: number) {
+    const group = await this.getGroupById(+id);
 
     if (!group) {
       throw new NotFoundException(`Group with ID ${id} not found`);
     }
 
-    return this.groupsRepository.deleteGroupById(id);
+    this.groupsRepository.deleteGroupById(+id);
+
+    return `Group with ID ${id} deleted successfully`;
   }
 }

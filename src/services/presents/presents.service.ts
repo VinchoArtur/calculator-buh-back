@@ -6,15 +6,15 @@ import { PresentsRepository } from '../../repositories/presents/present.reposito
 export class PresentsService {
   constructor(private readonly presentsRepository: PresentsRepository) {}
 
-  public async addPresent(present: PresentRequest): Promise<PresentRequest> {
+  public async addData(present: PresentRequest): Promise<PresentRequest> {
     return await this.presentsRepository.create(present);
   }
 
-  public async getPresents(): Promise<PresentRequest[]> {
+  public async getData(): Promise<PresentRequest[]> {
     return this.presentsRepository.findAll();
   }
 
-  public async deletePresentById(id: string): Promise<string> {
+  public async deleteData(id: string): Promise<string> {
     const present = await this.presentsRepository.findById(id);
 
     if (!present) {
@@ -26,7 +26,7 @@ export class PresentsService {
     return `Present with ID ${id} deleted successfully`;
   }
 
-  public async updatePresent(
+  public async updateData(
     id: string,
     updatedPresent: Partial<PresentRequest>,
   ): Promise<PresentRequest> {
