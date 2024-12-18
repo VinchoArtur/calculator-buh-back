@@ -20,9 +20,9 @@ export class GroupsRepository {
     });
   }
 
-  async findGroupById(id: number) {
+  async findById(id: number) {
     return this.prisma.group.findUnique({
-      where: { id },
+      where: { id: +id },
       include: {
         costs: true,
         presents: true,
@@ -30,7 +30,7 @@ export class GroupsRepository {
     });
   }
 
-  async getAllGroups() {
+  async findAll() {
     return this.prisma.group.findMany({
       include: {
         costs: true,
@@ -39,14 +39,14 @@ export class GroupsRepository {
     });
   }
 
-  async updateGroup(id: number, data: Partial<GroupRequest>) {
+  async updateData(id: number, data: Partial<GroupRequest>) {
     return this.prisma.group.update({
-      where: { id },
+      where: { id: +id },
       data,
     });
   }
 
-  async deleteGroupById(id: number) {
-    return this.prisma.group.delete({ where: { id } });
+  async deleteData(id: number) {
+    return this.prisma.group.delete({ where: { id: +id } });
   }
 }

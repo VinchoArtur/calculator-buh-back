@@ -29,15 +29,15 @@ export class PresentsRepository {
     });
   }
 
-  async update(id: string, data: Partial<PresentRequest>) {
+  async updateData(id: string, data: Partial<PresentRequest>) {
     return this.prisma.present.update({
       where: { id },
       data: data,
     });
   }
 
-  async delete(id: string) {
-    return this.prisma.present.delete({
+  async deleteData(id: string) {
+    return this.prisma.present.deleteData({
       where: { id },
     });
   }

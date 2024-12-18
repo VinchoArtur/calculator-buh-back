@@ -1,14 +1,20 @@
-import {
-  Injectable,
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { GroupRequest } from 'src/dtos/groups/group.dto';
 import { GroupsRepository } from 'src/repositories/groups/groups.repository';
+import { BaseService } from '../baseService';
 
 @Injectable()
-export class GroupsService {
-  constructor(private readonly groupsRepository: GroupsRepository) {}
+export class GroupsService extends BaseService<
+  GroupRequest,
+  { groupId: number }
+> {
+  constructor(private readonly groupsRepository: GroupsRepository) {
+    super(groupsRepository);
+  }
+
+  protected getModelName(): string {
+    return 'Group';
+  }
 
   async addData(data: { groupName: string }): Promise<{ groupId: number }> {
     const existingGroup = await this.groupsRepository.findGroupByName(
@@ -24,41 +30,5 @@ export class GroupsService {
 
     const newGroup = await this.groupsRepository.createGroup(data.groupName);
     return { groupId: newGroup.id };
-  }
-
-  async getData() {
-    return this.groupsRepository.getAllGroups();
-  }
-
-  async getGroupById(id: number) {
-    const group = await this.groupsRepository.findGroupById(id);
-
-    if (!group) {
-      throw new NotFoundException(`Group with ID ${id} not found`);
-    }
-
-    return group;
-  }
-
-  async updateData(id: number, data: GroupRequest) {
-    const group = await this.getGroupById(+id);
-
-    if (!group) {
-      throw new NotFoundException(`Group with ID ${id} not found`);
-    }
-
-    return this.groupsRepository.updateGroup(+id, data);
-  }
-
-  async deleteData(id: number) {
-    const group = await this.getGroupById(+id);
-
-    if (!group) {
-      throw new NotFoundException(`Group with ID ${id} not found`);
-    }
-
-    this.groupsRepository.deleteGroupById(+id);
-
-    return `Group with ID ${id} deleted successfully`;
   }
 }

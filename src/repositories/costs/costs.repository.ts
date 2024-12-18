@@ -30,14 +30,14 @@ export class CostsRepository {
     });
   }
 
-  async update(id: string, data: Partial<CostRequest>) {
+  async updateData(id: string, data: Partial<CostRequest>) {
     return this.prisma.cost.update({
       where: { id },
       data: data,
     });
   }
 
-  async delete(id: string) {
+  async deleteData(id: string) {
     return this.prisma.cost.delete({
       where: { id },
     });

@@ -12,7 +12,7 @@ export class GroupsController extends BaseController<GroupRequest> {
   @Get(':id')
   async getGroupById(@Param('id') id: number) {
     try {
-      const response = await this.groupsService.getGroupById(id);
+      const response = await this.groupsService.getById(id);
       return response;
     } catch (error) {
       throw error;
