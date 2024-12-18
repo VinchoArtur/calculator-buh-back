@@ -19,33 +19,51 @@ export class CostsController {
 
   @Post()
   async addCost(@Body() data: CostRequest): Promise<{ cost: CostRequest }> {
+    this.logger.log(`Received request to add a cost: ${JSON.stringify(data)}`);
     try {
-      this.logger.error('Received data:', JSON.stringify(data));
       const response = await this.addCostService.addCosts(data);
-      return { cost: response }; // Успешный результат возвращается напрямую
+      this.logger.log(`Cost added successfully: ${JSON.stringify(response)}`);
+      return { cost: response };
     } catch (error) {
-      this.logger.error('Error while adding cost:', error.message);
-      throw error; // Перебрасываем ошибку, чтобы клиент получил соответствующий код ответа
+      this.logger.error(
+        `Error occurred while adding a cost: ${error.message}`,
+        error.stack,
+      );
+      throw error;
     }
   }
 
   @Get()
   async getCosts() {
+    this.logger.log('Received request to fetch all costs');
     try {
-      return { costs: await this.addCostService.getCosts() };
+      const response = await this.addCostService.getCosts();
+      this.logger.log(
+        `Fetched costs successfully: ${JSON.stringify(response)}`,
+      );
+      return { costs: response };
     } catch (error) {
+      this.logger.error(
+        `Error occurred while fetching costs: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
 
   @Delete(':id')
   async deleteCost(@Param('id') id: string): Promise<{ message: string }> {
+    this.logger.log(`Received request to delete cost with ID: ${id}`);
     try {
-      this.logger.log(id);
       const response = await this.addCostService.deleteCostById(id);
+      this.logger.log(`Cost deleted successfully with ID: ${id}`);
       return { message: response };
     } catch (error) {
-      this.logger.error('Error while deleting cost:', error.message);
+      this.logger.error(
+        `Error occurred while deleting cost with ID: ${id}`,
+        error.message,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -55,10 +73,25 @@ export class CostsController {
     @Param('id') id: string,
     @Body() updatedCost: Partial<CostRequest>,
   ): Promise<{ updatedCost: CostRequest }> {
+    this.logger.log(
+      `Received request to update cost with ID: ${id}, Data: ${JSON.stringify(
+        updatedCost,
+      )}`,
+    );
     try {
       const response = await this.addCostService.updateCost(id, updatedCost);
+      this.logger.log(
+        `Cost updated successfully with ID: ${id}, Updated Data: ${JSON.stringify(
+          response,
+        )}`,
+      );
       return { updatedCost: response };
     } catch (error) {
+      this.logger.error(
+        `Error occurred while updating cost with ID: ${id}`,
+        error.message,
+        error.stack,
+      );
       throw error;
     }
   }
