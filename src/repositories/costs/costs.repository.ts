@@ -1,10 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../modules/prisma/services/prisma.service';
-import { CostRequest } from '../../dtos/costs/costs.dto.';
+import { CostRequest } from 'src/dtos/costs/costs.dto.';
+import { PrismaService } from 'src/modules/prisma/services/prisma.service';
+import { BaseRepositoryImpl } from '../baseRepository';
 
 @Injectable()
-export class CostsRepository {
-  constructor(private readonly prisma: PrismaService) {}
+export class CostsRepository extends BaseRepositoryImpl<CostRequest> {
+  constructor(prisma: PrismaService) {
+    super(prisma, 'cost');
+  }
 
   async create(cost: CostRequest) {
     return this.prisma.cost.create({
@@ -17,29 +20,6 @@ export class CostsRepository {
         costWithProfit: cost.costWithProfit,
         group: cost.groupId ? { connect: { id: cost.groupId } } : undefined,
       },
-    });
-  }
-
-  async findAll() {
-    return this.prisma.cost.findMany();
-  }
-
-  async findById(id: string) {
-    return this.prisma.cost.findUnique({
-      where: { id },
-    });
-  }
-
-  async updateData(id: string, data: Partial<CostRequest>) {
-    return this.prisma.cost.update({
-      where: { id },
-      data: data,
-    });
-  }
-
-  async deleteData(id: string) {
-    return this.prisma.cost.delete({
-      where: { id },
     });
   }
 }

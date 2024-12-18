@@ -27,8 +27,12 @@ export class GroupsService extends BaseService<
         groupId: existingGroup.id,
       });
     }
+    const groupRequest: GroupRequest = {
+      groupName: data.groupName,
+    };
 
-    const newGroup = await this.groupsRepository.createGroup(data.groupName);
+    const newGroup = await this.groupsRepository.createData(groupRequest);
+
     return { groupId: newGroup.id };
   }
 }

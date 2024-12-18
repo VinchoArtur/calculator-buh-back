@@ -1,13 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { GroupRequest } from 'src/dtos/groups/group.dto';
 import { PrismaService } from 'src/modules/prisma/services/prisma.service';
+import { BaseRepositoryImpl } from '../baseRepository';
 
 @Injectable()
-export class GroupsRepository {
-  constructor(private readonly prisma: PrismaService) {}
-
-  async createGroup(groupName: string) {
-    return this.prisma.group.create({ data: { groupName } });
+export class GroupsRepository extends BaseRepositoryImpl<GroupRequest> {
+  constructor(prisma: PrismaService) {
+    super(prisma, 'group');
   }
 
   async findGroupByName(groupName: string) {
