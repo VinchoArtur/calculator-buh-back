@@ -18,7 +18,7 @@ export class CostsRepository extends BaseRepositoryImpl<CostRequest> {
         hours: cost.hours,
         costWithoutProfit: cost.costWithoutProfit,
         costWithProfit: cost.costWithProfit,
-        group: cost.groupId ? { connect: { id: cost.groupId } } : undefined,
+        Group: cost.groupId ? { connect: { id: cost.groupId } } : undefined,
       },
     });
   }

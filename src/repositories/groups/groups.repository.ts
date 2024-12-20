@@ -13,8 +13,8 @@ export class GroupsRepository extends BaseRepositoryImpl<GroupRequest> {
     return this.prisma.group.findUnique({
       where: { groupName },
       include: {
-        costs: true,
-        presents: true,
+        Cost: true,
+        Present: true,
       },
     });
   }
@@ -23,8 +23,8 @@ export class GroupsRepository extends BaseRepositoryImpl<GroupRequest> {
     return this.prisma.group.findUnique({
       where: { id: +id },
       include: {
-        costs: true,
-        presents: true,
+        Cost: true,
+        Present: true,
       },
     });
   }
@@ -32,8 +32,8 @@ export class GroupsRepository extends BaseRepositoryImpl<GroupRequest> {
   async findAll() {
     return this.prisma.group.findMany({
       include: {
-        costs: true,
-        presents: true,
+        Cost: true,
+        Present: true,
       },
     });
   }

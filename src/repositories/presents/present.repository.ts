@@ -15,7 +15,7 @@ export class PresentsRepository extends BaseRepositoryImpl<PresentRequest> {
         name: present.name,
         price: present.price,
         description: present.description,
-        group: present.groupId
+        Group: present.groupId
           ? { connect: { id: present.groupId } }
           : undefined,
       },
