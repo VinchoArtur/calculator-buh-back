@@ -35,4 +35,15 @@ export class BaseRepositoryImpl<T> implements BaseRepository<T> {
   async deleteData(id: number) {
     return this.prisma[this.model].delete({ where: { id } });
   }
+
+  async updateFieldByIds(ids: number[], field: keyof T, value: T[keyof T]) {
+    return this.prisma[this.model].updateMany({
+      where: {
+        id: { in: ids },
+      },
+      data: {
+        [field]: value,
+      },
+    });
+  }
 }

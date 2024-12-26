@@ -1,10 +1,19 @@
-import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class GroupRequest {
   @IsString()
   groupName: string;
 
-  @IsOptional()
+  @IsArray()
+  groupType: string;
+
+  @IsArray()
   @IsNumber()
-  groupId?: number;
+  groupId?: number[];
+}
+
+export interface RequestGroupDto {
+  name: string;
+  type: string;
+  items: number[]
 }
