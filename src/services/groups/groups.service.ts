@@ -32,7 +32,7 @@ export class GroupsService extends BaseService<RequestGroupDto, { id: number }> 
     const requestData: GroupRequest = GroupRequestMapper.toRequest(data);
     const existingGroup = await this.groupsRepository.findGroupByName(requestData.groupName);
 
-    if (existingGroup) {
+    if (existingGroup && existingGroup.type === requestData.type) {
       throw new BadRequestException({
         message: 'Group already exists',
         groupId: existingGroup.id,
