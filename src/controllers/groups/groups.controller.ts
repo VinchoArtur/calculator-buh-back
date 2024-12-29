@@ -1,6 +1,6 @@
 import { Controller, Get, Param } from '@nestjs/common';
 import { GroupsService } from 'src/services/groups/groups.service';
-import { GroupRequest } from 'src/dtos/groups/group.dto';
+import { GroupRequest, RequestGroupDto } from 'src/dtos/groups/group.dto';
 import { BaseController } from '../baseController';
 
 @Controller('groups')
@@ -12,10 +12,20 @@ export class GroupsController extends BaseController<GroupRequest> {
   @Get(':id')
   async getGroupById(@Param('id') id: number) {
     try {
-      const response = await this.groupsService.getById(id);
-      return response;
+      return await this.groupsService.getById(id);
     } catch (error) {
       throw error;
+    }
+  }
+
+  @Get()
+  async getAllGroup() {
+    try {
+      const requestGroupDtos: RequestGroupDto[] = await this.groupsService.getData();
+      return await this.groupsService.prepareResData(requestGroupDtos)
+    } catch (error) {
+      console.error('Error fetching all groups:', error.message);
+      throw new Error('Failed to fetch all groups');
     }
   }
 }

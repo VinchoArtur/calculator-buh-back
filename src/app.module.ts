@@ -14,6 +14,8 @@ import { PresentsRepository } from './repositories/presents/present.repository';
 import { GroupsController } from './controllers/groups/groups.controller';
 import { GroupsRepository } from './repositories/groups/groups.repository';
 import { GroupsService } from './services/groups/groups.service';
+import { CostGroupRepository } from './repositories/groups/cost-group.repository';
+import { PresentGroupRepository } from './repositories/groups/present-group.repository';
 
 @Module({
   imports: [PrismaModule],
@@ -33,6 +35,8 @@ import { GroupsService } from './services/groups/groups.service';
     CostsRepository,
     PresentsRepository,
     GroupsRepository,
+    CostGroupRepository,
+    PresentGroupRepository,
     GroupsService,
   ],
 })

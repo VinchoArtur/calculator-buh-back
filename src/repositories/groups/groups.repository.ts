@@ -10,42 +10,66 @@ export class GroupsRepository extends BaseRepositoryImpl<GroupRequest> {
   }
 
   async findGroupByName(groupName: string) {
+    if (!groupName) {
+      throw new Error('Group name must be provided');
+    }
     return this.prisma.group.findUnique({
       where: { groupName },
       include: {
-        Cost: true,
-        Present: true,
+        costs: true,
+        presents: true,
       },
     });
   }
+
 
   async findById(id: number) {
+    if (!id || isNaN(id)) {
+      throw new Error('A valid ID must be provided');
+    }
     return this.prisma.group.findUnique({
-      where: { id: +id },
+      where: { id: Number(id) },
       include: {
-        Cost: true,
-        Present: true,
+        costs: true,
+        presents: true,
       },
     });
   }
+
 
   async findAll() {
-    return this.prisma.group.findMany({
+    const groups = await this.prisma.group.findMany({
       include: {
-        Cost: true,
-        Present: true,
+        costs: true,
+        presents: true,
       },
     });
+    return groups ?? [];
   }
 
+
   async updateData(id: number, data: Partial<GroupRequest>) {
+    if (!id || isNaN(id)) {
+      throw new Error('A valid ID must be provided');
+    }
+    if (!data || Object.keys(data).length === 0) {
+      throw new Error('Data to update must be provided');
+    }
     return this.prisma.group.update({
-      where: { id: +id },
+      where: { id },
       data,
     });
   }
 
+
   async deleteData(id: number) {
-    return this.prisma.group.delete({ where: { id: +id } });
+    if (!id || isNaN(id)) {
+      throw new Error('A valid ID must be provided');
+    }
+    const number = Number(id);
+    return this.prisma.group.delete({
+      where: { id: number },
+    });
   }
+
 }
