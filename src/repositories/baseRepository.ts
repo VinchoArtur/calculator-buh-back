@@ -34,6 +34,16 @@ export class BaseRepositoryImpl<T> implements BaseRepository<T> {
     });
   }
 
+  async findByGroupIds(ids: number[]) {
+    return this.prisma[this.model].findMany({
+      where: {
+        groupId: {
+          in: ids,
+        },
+      },
+    });
+  }
+
   async findAll() {
     return this.prisma[this.model].findMany();
   }
