@@ -28,7 +28,7 @@ export class GroupsRepository extends BaseRepositoryImpl<GroupRequest> {
       throw new Error('A valid ID must be provided');
     }
     return this.prisma.group.findUnique({
-      where: { id },
+      where: { id: Number(id) },
       include: {
         costs: true,
         presents: true,
@@ -44,10 +44,7 @@ export class GroupsRepository extends BaseRepositoryImpl<GroupRequest> {
         presents: true,
       },
     });
-    if (!groups || groups.length === 0) {
-      throw new Error('No groups found');
-    }
-    return groups;
+    return groups ?? [];
   }
 
 
@@ -69,8 +66,9 @@ export class GroupsRepository extends BaseRepositoryImpl<GroupRequest> {
     if (!id || isNaN(id)) {
       throw new Error('A valid ID must be provided');
     }
+    const number = Number(id);
     return this.prisma.group.delete({
-      where: { id },
+      where: { id: number },
     });
   }
 

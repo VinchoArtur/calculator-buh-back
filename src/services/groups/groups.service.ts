@@ -7,7 +7,7 @@ import { CostsRepository } from '../../repositories/costs/costs.repository';
 import { PresentsRepository } from '../../repositories/presents/present.repository';
 
 @Injectable()
-export class GroupsService extends BaseService<RequestGroupDto,{ groupId: number }> {
+export class GroupsService extends BaseService<RequestGroupDto, { groupId: number }> {
   constructor(private readonly groupsRepository: GroupsRepository, private readonly costsRepository: CostsRepository, private readonly presentsRepository: PresentsRepository) {
     super(groupsRepository);
   }
@@ -16,7 +16,7 @@ export class GroupsService extends BaseService<RequestGroupDto,{ groupId: number
     return 'Group';
   }
 
-  async addData(data: RequestGroupDto): Promise<{ groupId: number }> {
+  async addData(data: RequestGroupDto): Promise<{ groupId: number, name: string, type: string, items: number[], data: any[] }> {
     const requestData: GroupRequest = GroupRequestMapper.toRequest(data);
     const existingGroup = await this.groupsRepository.findGroupByName(requestData.groupName);
 
@@ -27,29 +27,30 @@ export class GroupsService extends BaseService<RequestGroupDto,{ groupId: number
       });
     }
 
-    // Теперь мы используем groupType, а не type
     const groupRequest = {
       groupName: requestData.groupName,
-      type: requestData.type,  // Используем groupType, а не type
+      type: requestData.type,
     };
 
     const newGroup = await this.groupsRepository.createData(groupRequest);
-
+    let items: any[] = [];
     if (newGroup) {
-      // Обновляем данные в зависимости от типа группы (presents или costs)
       switch (newGroup.type) {
         case 'presents':
-          await this.groupsRepository.updatePresentsData(requestData.groupId, newGroup.id);
+          await this.groupsRepository.updatePresentsData(requestData.groupIds, newGroup.id);
+          const presentItems = await this.presentsRepository.findByIds(requestData.groupIds);
+          items.push(presentItems);
           break;
         case 'costs':
-          await this.groupsRepository.updateCostsData(requestData.groupId, newGroup.id);
+          await this.groupsRepository.updateCostsData(requestData.groupIds, newGroup.id);
+          const costItems = await this.presentsRepository.findByIds(requestData.groupIds);
+          items.push(costItems);
           break;
       }
     }
 
-    return { groupId: newGroup.id };
+    return { groupId: newGroup.id, name: newGroup.groupName, type: newGroup.type, items: requestData.groupIds, data: items };
   }
-
 
 
 }

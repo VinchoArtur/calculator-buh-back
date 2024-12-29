@@ -17,4 +17,13 @@ export class GroupsController extends BaseController<GroupRequest> {
       throw error;
     }
   }
+
+  @Get()
+  async getAllGroup() {
+    try {
+      return await this.groupsService.getData();
+    } catch (error) {
+      throw error
+    }
+  }
 }

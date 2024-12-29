@@ -24,6 +24,16 @@ export class BaseRepositoryImpl<T> implements BaseRepository<T> {
     return this.prisma[this.model].findUnique({ where: { id } });
   }
 
+  async findByIds(ids: number[]) {
+    return this.prisma[this.model].findMany({
+      where: {
+        id: {
+          in: ids,
+        },
+      },
+    });
+  }
+
   async findAll() {
     return this.prisma[this.model].findMany();
   }

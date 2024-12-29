@@ -9,7 +9,7 @@ export class GroupRequest {
 
   @IsArray()
   @IsNumber()
-  groupId?: number[];
+  groupIds?: number[];
 }
 
 export interface RequestGroupDto {
