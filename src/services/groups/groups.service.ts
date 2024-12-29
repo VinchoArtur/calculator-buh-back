@@ -18,9 +18,7 @@ export class GroupsService extends BaseService<RequestGroupDto,{ groupId: number
 
   async addData(data: RequestGroupDto): Promise<{ groupId: number }> {
     const requestData: GroupRequest = GroupRequestMapper.toRequest(data);
-    const existingGroup = await this.groupsRepository.findGroupByName(
-      requestData.groupName,
-    );
+    const existingGroup = await this.groupsRepository.findGroupByName(requestData.groupName);
 
     if (existingGroup) {
       throw new BadRequestException({
@@ -28,30 +26,30 @@ export class GroupsService extends BaseService<RequestGroupDto,{ groupId: number
         groupId: existingGroup.id,
       });
     }
+
+    // Теперь мы используем groupType, а не type
     const groupRequest = {
       groupName: requestData.groupName,
-      groupId: requestData.groupId || [],
-      groupType: requestData.groupType,
-      type: requestData.groupType,
+      type: requestData.type,  // Используем groupType, а не type
     };
 
     const newGroup = await this.groupsRepository.createData(groupRequest);
+
     if (newGroup) {
+      // Обновляем данные в зависимости от типа группы (presents или costs)
       switch (newGroup.type) {
-        case 'presents': await this.updatePresentsData(requestData.groupId, newGroup.id);
-        break;
-        case 'costs' : await this.updateCostsData(requestData.groupId, newGroup.id);
+        case 'presents':
+          await this.groupsRepository.updatePresentsData(requestData.groupId, newGroup.id);
+          break;
+        case 'costs':
+          await this.groupsRepository.updateCostsData(requestData.groupId, newGroup.id);
+          break;
       }
     }
 
     return { groupId: newGroup.id };
   }
 
-  private async updatePresentsData(data: number[], groupId: number) {
-    return await this.presentsRepository.updateFieldByIds(data, 'groupId', groupId);
-  }
 
-  private async updateCostsData(data: number[], groupId: number) {
-    return await this.costsRepository.updateFieldByIds(data, 'groupId', groupId);
-  }
+
 }

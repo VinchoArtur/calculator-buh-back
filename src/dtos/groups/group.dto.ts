@@ -5,7 +5,7 @@ export class GroupRequest {
   groupName: string;
 
   @IsArray()
-  groupType: string;
+  type: string;
 
   @IsArray()
   @IsNumber()

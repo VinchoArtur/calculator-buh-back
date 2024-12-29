@@ -5,7 +5,7 @@ export class GroupRequestMapper {
     return {
       groupId: data.items,
       groupName: data.name,
-      groupType: data.type
+      type: data.type
     }
   }
 }

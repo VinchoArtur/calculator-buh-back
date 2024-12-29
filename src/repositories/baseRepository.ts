@@ -46,4 +46,27 @@ export class BaseRepositoryImpl<T> implements BaseRepository<T> {
       },
     });
   }
+
+  async updatePresentsData(presentIds: number[], groupId: number): Promise<void> {
+    // Создаем связи в промежуточной таблице PresentGroup
+    const presentData = presentIds.map(presentId => ({
+      groupId,
+      presentId
+    }));
+    await this.prisma.presentGroup.createMany({
+      data: presentData
+    });
+  }
+
+  async updateCostsData(costIds: number[], groupId: number): Promise<void> {
+    // Создаем связи в промежуточной таблице CostGroup
+    const costData = costIds.map(costId => ({
+      groupId,
+      costId
+    }));
+    await this.prisma.costGroup.createMany({
+      data: costData
+    });
+  }
+
 }
