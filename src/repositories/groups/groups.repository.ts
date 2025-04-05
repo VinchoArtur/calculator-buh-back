@@ -22,7 +22,6 @@ export class GroupsRepository extends BaseRepositoryImpl<GroupRequest> {
     });
   }
 
-
   async findById(id: number) {
     if (!id || isNaN(id)) {
       throw new Error('A valid ID must be provided');
@@ -36,7 +35,6 @@ export class GroupsRepository extends BaseRepositoryImpl<GroupRequest> {
     });
   }
 
-
   async findAll() {
     const groups = await this.prisma.group.findMany({
       include: {
@@ -46,7 +44,6 @@ export class GroupsRepository extends BaseRepositoryImpl<GroupRequest> {
     });
     return groups ?? [];
   }
-
 
   async updateData(id: number, data: Partial<GroupRequest>) {
     if (!id || isNaN(id)) {
@@ -61,7 +58,6 @@ export class GroupsRepository extends BaseRepositoryImpl<GroupRequest> {
     });
   }
 
-
   async deleteData(id: number) {
     if (!id || isNaN(id)) {
       throw new Error('A valid ID must be provided');
@@ -71,5 +67,4 @@ export class GroupsRepository extends BaseRepositoryImpl<GroupRequest> {
       where: { id: number },
     });
   }
-
 }

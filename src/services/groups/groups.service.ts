@@ -11,10 +11,17 @@ import { PresentGroupRepository } from '../../repositories/groups/present-group.
 import { PresentRequest } from '../../dtos/presents/presents.dto';
 
 @Injectable()
-export class GroupsService extends BaseService<RequestGroupDto, { id: number }> {
-  constructor(private readonly groupsRepository: GroupsRepository, private readonly costsRepository: CostsRepository,
-              private readonly presentsRepository: PresentsRepository, private readonly costGroupRepository: CostGroupRepository,
-              private readonly presentGroupRepository: PresentGroupRepository) {
+export class GroupsService extends BaseService<
+  RequestGroupDto,
+  { id: number }
+> {
+  constructor(
+    private readonly groupsRepository: GroupsRepository,
+    private readonly costsRepository: CostsRepository,
+    private readonly presentsRepository: PresentsRepository,
+    private readonly costGroupRepository: CostGroupRepository,
+    private readonly presentGroupRepository: PresentGroupRepository,
+  ) {
     super(groupsRepository);
   }
 
@@ -23,14 +30,16 @@ export class GroupsService extends BaseService<RequestGroupDto, { id: number }> 
   }
 
   async addData(data: RequestGroupDto): Promise<{
-    id: number,
-    name: string,
-    type: string,
-    items: number[],
-    data: any[]
+    id: number;
+    name: string;
+    type: string;
+    items: number[];
+    data: any[];
   }> {
     const requestData: GroupRequest = GroupRequestMapper.toRequest(data);
-    const existingGroup = await this.groupsRepository.findGroupByName(requestData.groupName);
+    const existingGroup = await this.groupsRepository.findGroupByName(
+      requestData.groupName,
+    );
 
     if (existingGroup && existingGroup.type === requestData.type) {
       throw new BadRequestException({
@@ -49,55 +58,76 @@ export class GroupsService extends BaseService<RequestGroupDto, { id: number }> 
     if (newGroup) {
       switch (newGroup.type) {
         case 'presents':
-          await this.groupsRepository.updatePresentsData(requestData.groupIds, newGroup.id);
-          const presentItems = await this.presentsRepository.findByIds(requestData.groupIds);
-          items = (presentItems);
+          await this.groupsRepository.updatePresentsData(
+            requestData.groupIds,
+            newGroup.id,
+          );
+          const presentItems = await this.presentsRepository.findByIds(
+            requestData.groupIds,
+          );
+          items = presentItems;
           break;
         case 'costs':
-          await this.groupsRepository.updateCostsData(requestData.groupIds, newGroup.id);
-          const costItems = await this.costsRepository.findByIds(requestData.groupIds);
-          items = (costItems);
+          await this.groupsRepository.updateCostsData(
+            requestData.groupIds,
+            newGroup.id,
+          );
+          const costItems = await this.costsRepository.findByIds(
+            requestData.groupIds,
+          );
+          items = costItems;
           break;
       }
     }
 
-    return { id: newGroup.id, name: newGroup.groupName, type: newGroup.type, items: requestData.groupIds, data: items };
+    return {
+      id: newGroup.id,
+      name: newGroup.groupName,
+      type: newGroup.type,
+      items: requestData.groupIds,
+      data: items,
+    };
   }
 
-  public async prepareResData(requestGroupDtos: RequestGroupDto[]): Promise<RequestGroupDto[]> {
+  public async prepareResData(
+    requestGroupDtos: RequestGroupDto[],
+  ): Promise<RequestGroupDto[]> {
     return await Promise.all(
-      requestGroupDtos.map(async group => {
+      requestGroupDtos.map(async (group) => {
         if (group.type === 'costs') {
-          const costIds = group.costs.map(cost => cost.groupId);
-          group.data = await this.getCostsData(costIds) ?? [];
+          const costIds = group.costs.map((cost) => cost.groupId);
+          group.data = (await this.getCostsData(costIds)) ?? [];
         } else if (group.type === 'presents') {
-          const presentsIds = group.presents.map(present => present.groupId);
-          group.data = await this.getPresentsData(presentsIds) ?? [];
+          const presentsIds = group.presents.map((present) => present.groupId);
+          group.data = (await this.getPresentsData(presentsIds)) ?? [];
         }
         return group;
       }),
     );
-
   }
 
   public async getCostsData(ids: number[]): Promise<CostRequest> {
-    const costGroupData: { groupId: number, costId: number }[] = await this.costGroupRepository.findByGroupIds(ids);
+    const costGroupData: { groupId: number; costId: number }[] =
+      await this.costGroupRepository.findByGroupIds(ids);
     if (costGroupData && costGroupData.length > 0) {
-      const costIds = costGroupData.filter(res => res.costId).map(res => res.costId);
+      const costIds = costGroupData
+        .filter((res) => res.costId)
+        .map((res) => res.costId);
       if (costIds && costIds.length > 0) {
         return await this.costsRepository.findByIds(costIds);
       }
     }
   }
 
-
   async getPresentsData(ids: number[]): Promise<PresentRequest> {
     const presentGroupData: {
-      groupId: number,
-      presentId: number
+      groupId: number;
+      presentId: number;
     }[] = await this.presentGroupRepository.findByGroupIds(ids);
     if (presentGroupData && presentGroupData.length > 0) {
-      const presentIds = presentGroupData.filter(present => present.presentId).map(res => res.presentId);
+      const presentIds = presentGroupData
+        .filter((present) => present.presentId)
+        .map((res) => res.presentId);
       if (presentIds && presentIds.length > 0) {
         return await this.presentsRepository.findByIds(presentIds);
       }

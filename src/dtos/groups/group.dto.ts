@@ -1,4 +1,4 @@
-import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsNumber, IsString } from 'class-validator';
 
 export class GroupRequest {
   @IsString()
@@ -15,8 +15,8 @@ export class GroupRequest {
 export interface RequestGroupDto {
   name: string;
   type: string;
-  items: number[]
-  presents?: {groupId: number, presentId: number}[];
-  costs?: {groupId: number, costId: number}[];
+  items: number[];
+  presents?: { groupId: number; presentId: number }[];
+  costs?: { groupId: number; costId: number }[];
   data?: any;
 }

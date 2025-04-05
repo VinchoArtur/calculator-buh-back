@@ -21,7 +21,7 @@ export class BaseRepositoryImpl<T> implements BaseRepository<T> {
   }
 
   async findById(id: number) {
-    return this.prisma[this.model].findUnique({ where: { id } });
+    return this.prisma[this.model].findUnique({ where: { id: Number(id) } });
   }
 
   async findByIds(ids: number[]) {
@@ -53,7 +53,7 @@ export class BaseRepositoryImpl<T> implements BaseRepository<T> {
   }
 
   async deleteData(id: number) {
-    return this.prisma[this.model].delete({ where: { id } });
+    return this.prisma[this.model].delete({ where: { id: Number(id) } });
   }
 
   async updateFieldByIds(ids: number[], field: keyof T, value: T[keyof T]) {
@@ -67,26 +67,28 @@ export class BaseRepositoryImpl<T> implements BaseRepository<T> {
     });
   }
 
-  async updatePresentsData(presentIds: number[], groupId: number): Promise<void> {
+  async updatePresentsData(
+    presentIds: number[],
+    groupId: number,
+  ): Promise<void> {
     // Создаем связи в промежуточной таблице PresentGroup
-    const presentData = presentIds.map(presentId => ({
+    const presentData = presentIds.map((presentId) => ({
       groupId,
-      presentId
+      presentId,
     }));
     await this.prisma.presentGroup.createMany({
-      data: presentData
+      data: presentData,
     });
   }
 
   async updateCostsData(costIds: number[], groupId: number): Promise<void> {
     // Создаем связи в промежуточной таблице CostGroup
-    const costData = costIds.map(costId => ({
+    const costData = costIds.map((costId) => ({
       groupId,
-      costId
+      costId,
     }));
     await this.prisma.costGroup.createMany({
-      data: costData
+      data: costData,
     });
   }
-
 }
