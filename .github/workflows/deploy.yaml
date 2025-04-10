@@ -12,12 +12,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Debug SSH Key (Temporary - REMOVE LATER!)
-        run: echo "${{ secrets.WEDDING_DEPLOY_PRIVATE_KEY }}" | base64
-
-      - name: Debug SSH Key (Temporary - REMOVE LATER!)
-        run: echo "${{ secrets.WEDDING_DEPLOY_PRIVATE_KEY }}" | base64
-
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
@@ -36,7 +30,7 @@ jobs:
           username: ${{ secrets.DIGITALOCEAN_USER }}
           key: ${{ secrets.WEDDING_DEPLOY_PRIVATE_KEY }}
           source: dist/ # Указана ваша директория сборки
-          target: /root/wedding-back # Указан путь до вашего проекта на сервере
+          target: /root/calculator-buh-back # Указан путь до вашего проекта на сервере
 
       - name: SSH to server and restart application
         uses: appleboy/ssh-action@master
@@ -45,6 +39,6 @@ jobs:
           username: ${{ secrets.DIGITALOCEAN_USER }}
           key: ${{ secrets.WEDDING_DEPLOY_PRIVATE_KEY }}
           script: |
-            cd /root/wedding-back
+            cd /root/calculator-buh-back
             npm install --production
             pm2 restart weddingback
