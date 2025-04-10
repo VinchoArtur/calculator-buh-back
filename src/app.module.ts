@@ -16,7 +16,6 @@ import { GroupsRepository } from './repositories/groups/groups.repository';
 import { GroupsService } from './services/groups/groups.service';
 import { CostGroupRepository } from './repositories/groups/cost-group.repository';
 import { PresentGroupRepository } from './repositories/groups/present-group.repository';
-import { TestService } from './services/test/test.service';
 import { HttpModule } from '@nestjs/axios';
 
 @Module({
@@ -40,7 +39,6 @@ import { HttpModule } from '@nestjs/axios';
     CostGroupRepository,
     PresentGroupRepository,
     GroupsService,
-    TestService,
   ],
 })
 export class AppModule {}

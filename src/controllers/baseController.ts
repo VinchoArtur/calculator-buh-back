@@ -1,6 +1,5 @@
 import { Post, Get, Delete, Patch, Param, Body, Logger } from '@nestjs/common';
 import { IProcessData } from 'src/interfaces/iProcess-data';
-import { TestService } from '../services/test/test.service';
 
 export abstract class BaseController<T> implements IProcessData<T> {
   protected readonly logger: Logger;
