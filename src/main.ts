@@ -21,7 +21,7 @@ async function bootstrap() {
   );
   app.setGlobalPrefix('v1');
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? 3001);
 }
 
 bootstrap();
