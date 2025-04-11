@@ -42,3 +42,4 @@ jobs:
             cd /root/calculator-buh-back
             npm install --production
             pm2 restart weddingback
+            sudo systemctl restart nginx
