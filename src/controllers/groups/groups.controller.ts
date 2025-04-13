@@ -21,8 +21,11 @@ export class GroupsController extends BaseController<GroupRequest> {
   @Get()
   async getAllGroup() {
     try {
-      const requestGroupDtos: RequestGroupDto[] = await this.groupsService.getData();
-      return await this.groupsService.prepareResData(requestGroupDtos)
+      const requestGroupDtos: RequestGroupDto[] =
+        await this.groupsService.getData();
+      return {
+        results: await this.groupsService.prepareResData(requestGroupDtos),
+      };
     } catch (error) {
       console.error('Error fetching all groups:', error.message);
       throw new Error('Failed to fetch all groups');
