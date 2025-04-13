@@ -23,10 +23,9 @@ export abstract class BaseService<T, R = T> {
     return data;
   }
 
-  async updateData(id: string, updatedData: Partial<T>): Promise<T> {
+  async updateData(id: number, updatedData: Partial<T>): Promise<T> {
     await this.getById(id);
-
-    return this.repository.updateData(id, updatedData);
+    return this.repository.updateData(Number(id), updatedData);
   }
 
   async deleteData(id: string): Promise<string> {
