@@ -19,10 +19,6 @@ jobs:
         with:
           node-version: 'lts/*'
 
-      # ❌ Убираем "npm install", чтобы оно не выполнялось на CI
-      # Ранее: "Install dependencies (local check)"
-      # Это здесь не работает.
-
       # Шаг 3: Отправка всего кода проекта на удаленный сервер
       - name: Deploy Full Project
         uses: appleboy/scp-action@master
@@ -43,7 +39,7 @@ jobs:
           script: |
             cd /root/calculator-buh-back
             rm -rf node_modules
-            npm install --production
+            npm install --production --force
             npm run build
             pm2 restart weddingback || pm2 start dist/index.js --name weddingback
             pm2 save
