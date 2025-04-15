@@ -10,30 +10,30 @@ jobs:
 
     steps:
       # Шаг 1: Checkout кода
-      - name: Checkout code
+      - name: Checkout code (обязательно первым)
         uses: actions/checkout@v3
 
-      # Шаг 2: Set up Node.js для проверки зависимости локально (опционально)
+      # Шаг 2: Подготовьте окружение на CI, если в будущем будете что-то выполнять здесь
       - name: Set up Node.js locally
         uses: actions/setup-node@v3
         with:
           node-version: 'lts/*'
 
-      # Шаг 3: Установка зависимостей (опционально: проверка на CI)
-      - name: Install dependencies (local check)
-        run: npm install
+      # ❌ Убираем "npm install", чтобы оно не выполнялось на CI
+      # Ранее: "Install dependencies (local check)"
+      # Это здесь не работает.
 
-      # Шаг 4: Отправка всего кода проекта на сервер
+      # Шаг 3: Отправка всего кода проекта на удаленный сервер
       - name: Deploy Full Project
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.DIGITALOCEAN_HOST }}
           username: ${{ secrets.DIGITALOCEAN_USER }}
           key: ${{ secrets.WEDDING_DEPLOY_PRIVATE_KEY }}
-          source: ./ # Отправляем ВСЁ содержимое проекта
-          target: /root/calculator-buh-back # Путь на сервере
+          source: ./ # Исходные файлы проекта
+          target: /root/calculator-buh-back # Цель на сервере
 
-      # Шаг 5: SSH в сервер и установка зависимостей, сборка, рестарт приложения
+      # Шаг 4: SSH в сервер, установка зависимостей, сборка, запуск
       - name: SSH to server and build project
         uses: appleboy/ssh-action@master
         with:
@@ -41,17 +41,10 @@ jobs:
           username: ${{ secrets.DIGITALOCEAN_USER }}
           key: ${{ secrets.WEDDING_DEPLOY_PRIVATE_KEY }}
           script: |
-            # Переход в директорию проекта
             cd /root/calculator-buh-back
-            
-            # Установка production-зависимостей
+            rm -rf node_modules
             npm install --production
-            
-            # Выполнение сборки
             npm run build
-            
-            # Перезапуск приложения через PM2
             pm2 restart weddingback || pm2 start dist/index.js --name weddingback
-            
-            # Перезагрузка Nginx (если используется)
+            pm2 save
             sudo systemctl restart nginx
