@@ -4,7 +4,7 @@ export class GroupRequestMapper {
   static toRequest(data: RequestGroupDto): GroupRequest {
     return {
       groupIds: data.items,
-      groupName: data.name,
+      groupName: data.groupName,
       type: data.type
     }
   }

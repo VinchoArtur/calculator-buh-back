@@ -53,7 +53,7 @@ export class GroupsRepository extends BaseRepositoryImpl<GroupRequest> {
       throw new Error('Data to update must be provided');
     }
     return this.prisma.group.update({
-      where: { id },
+      where: { id: Number(id) },
       data,
     });
   }

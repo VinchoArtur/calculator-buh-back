@@ -13,7 +13,7 @@ export class GroupRequest {
 }
 
 export interface RequestGroupDto {
-  name: string;
+  groupName: string;
   type: string;
   items: number[];
   presents?: { groupId: number; presentId: number }[];

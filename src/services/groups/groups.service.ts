@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { GroupRequest, RequestGroupDto } from 'src/dtos/groups/group.dto';
 import { GroupsRepository } from 'src/repositories/groups/groups.repository';
 import { BaseService } from '../baseService';
@@ -133,5 +133,80 @@ export class GroupsService extends BaseService<
       }
     }
   }
+
+  /**
+   * Переопределённый метод для обновления группы.
+   * Учитывает, какой тип данных (costs или presents) нужно обновить,
+   * основываясь на типе самой группы (type).
+   */
+  async updateData(
+    id: number,
+    updatedData: Partial<RequestGroupDto>,
+  ): Promise<RequestGroupDto> {
+    const existingGroup = await this.groupsRepository.findById(id);
+    if (!existingGroup) {
+      throw new NotFoundException(`Group with ID ${id} not found!`);
+    }
+
+    const prismaData = this.mapUpdateData(
+      existingGroup.type as 'costs' | 'presents',
+      updatedData,
+    );
+
+    const updatedGroup = await this.groupsRepository.updateData(id, prismaData);
+
+    return this.mapUpdatedGroup(updatedGroup);
+  }
+
+  private mapUpdateData(
+    groupType: 'costs' | 'presents',
+    updatedData: Partial<RequestGroupDto>,
+  ): Record<string, any> {
+    const prismaData: any = {
+      groupName: updatedData.groupName,
+      type: updatedData.type,
+      items: updatedData.items,
+    };
+
+    if (groupType === 'costs' && updatedData.costs?.length) {
+      prismaData.costs = {
+        connect: updatedData.costs.map((cost) => ({
+          groupId_costId: {
+            groupId: cost.groupId,
+            costId: cost.costId,
+          },
+        })),
+      };
+    }
+
+    if (groupType === 'presents' && updatedData.presents?.length) {
+      prismaData.presents = {
+        connect: updatedData.presents.map((present) => ({
+          groupId_presentId: { // Аналогично для комбинаторного ключа presents
+            groupId: present.groupId,
+            presentId: present.presentId,
+          },
+        })),
+      };
+    }
+
+    Object.keys(prismaData).forEach((key) => {
+      if (prismaData[key] === undefined || prismaData[key]?.length === 0) {
+        delete prismaData[key];
+      }
+    });
+
+    return prismaData;
+  }
+
+  private mapUpdatedGroup(updatedGroup: any): RequestGroupDto {
+    return {
+      ...updatedGroup,
+      items: Array.isArray(updatedGroup.items)
+        ? updatedGroup.items.map((item) => Number(item))
+        : [],
+    };
+  }
+
 
 }
