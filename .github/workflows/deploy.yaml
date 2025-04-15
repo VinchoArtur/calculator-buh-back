@@ -9,46 +9,49 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Clean Server Directory
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.DIGITALOCEAN_HOST }}
-          username: ${{ secrets.DIGITALOCEAN_USER }}
-          key: ${{ secrets.WEDDING_DEPLOY_PRIVATE_KEY }}
-          script: |
-            rm -rf /root/calculator-buh-back/*
-
+      # Шаг 1: Checkout кода
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Node.js
+      # Шаг 2: Set up Node.js для проверки зависимости локально (опционально)
+      - name: Set up Node.js locally
         uses: actions/setup-node@v3
         with:
           node-version: 'lts/*'
 
-      - name: Install dependencies
+      # Шаг 3: Установка зависимостей (опционально: проверка на CI)
+      - name: Install dependencies (local check)
         run: npm install
 
-      - name: Build application
-        run: npm run build
-
-      - name: Deploy to DigitalOcean
+      # Шаг 4: Отправка всего кода проекта на сервер
+      - name: Deploy Full Project
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.DIGITALOCEAN_HOST }}
           username: ${{ secrets.DIGITALOCEAN_USER }}
           key: ${{ secrets.WEDDING_DEPLOY_PRIVATE_KEY }}
-          source: dist/ # Указана ваша директория сборки
-          target: /root/calculator-buh-back # Указан путь до вашего проекта на сервере
+          source: ./ # Отправляем ВСЁ содержимое проекта
+          target: /root/calculator-buh-back # Путь на сервере
 
-      - name: SSH to server and restart application
+      # Шаг 5: SSH в сервер и установка зависимостей, сборка, рестарт приложения
+      - name: SSH to server and build project
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.DIGITALOCEAN_HOST }}
           username: ${{ secrets.DIGITALOCEAN_USER }}
           key: ${{ secrets.WEDDING_DEPLOY_PRIVATE_KEY }}
           script: |
+            # Переход в директорию проекта
             cd /root/calculator-buh-back
+            
+            # Установка production-зависимостей
             npm install --production
-            pm2 restart weddingback
+            
+            # Выполнение сборки
+            npm run build
+            
+            # Перезапуск приложения через PM2
+            pm2 restart weddingback || pm2 start dist/index.js --name weddingback
+            
+            # Перезагрузка Nginx (если используется)
             sudo systemctl restart nginx
