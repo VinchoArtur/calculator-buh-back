@@ -11,24 +11,15 @@ export class GroupsController extends BaseController<GroupRequest> {
 
   @Get(':id')
   async getGroupById(@Param('id') id: number) {
-    try {
-      return await this.groupsService.getById(id);
-    } catch (error) {
-      throw error;
-    }
+    return await this.groupsService.getById(id);
   }
 
   @Get()
   async getAllGroup() {
-    try {
-      const requestGroupDtos: RequestGroupDto[] =
-        await this.groupsService.getData();
-      return {
-        results: await this.groupsService.prepareResData(requestGroupDtos),
-      };
-    } catch (error) {
-      console.error('Error fetching all groups:', error.message);
-      throw new Error('Failed to fetch all groups');
-    }
+    const requestGroupDtos: RequestGroupDto[] =
+      await this.groupsService.getData();
+    return {
+      results: await this.groupsService.prepareResData(requestGroupDtos),
+    };
   }
 }
