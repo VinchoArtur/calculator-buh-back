@@ -9,6 +9,7 @@ import { CostGroupRepository } from '../../repositories/groups/cost-group.reposi
 import { CostRequest } from '../../dtos/costs/costs.dto.';
 import { PresentGroupRepository } from '../../repositories/groups/present-group.repository';
 import { PresentRequest } from '../../dtos/presents/presents.dto';
+import { PrismaService } from '../../modules/prisma/services/prisma.service';
 
 @Injectable()
 export class GroupsService extends BaseService<
@@ -21,6 +22,7 @@ export class GroupsService extends BaseService<
     private readonly presentsRepository: PresentsRepository,
     private readonly costGroupRepository: CostGroupRepository,
     private readonly presentGroupRepository: PresentGroupRepository,
+    private readonly prisma: PrismaService,
   ) {
     super(groupsRepository);
   }
@@ -96,10 +98,10 @@ export class GroupsService extends BaseService<
       requestGroupDtos.map(async (group) => {
         if (group.type === 'costs') {
           const costIds = group.costs.map((cost) => cost.groupId);
-          group.data = (await this.getCostsData(costIds)) ?? [];
+          group.data = (await this.getCostsData(group?.items ?? costIds)) ?? [];
         } else if (group.type === 'presents') {
           const presentsIds = group.presents.map((present) => present.groupId);
-          group.data = (await this.getPresentsData(presentsIds)) ?? [];
+          group.data = (await this.getPresentsData(group?.items ?? presentsIds)) ?? [];
         }
         return group;
       }),
@@ -139,64 +141,189 @@ export class GroupsService extends BaseService<
    * Учитывает, какой тип данных (costs или presents) нужно обновить,
    * основываясь на типе самой группы (type).
    */
-  async updateData(
-    id: number,
-    updatedData: Partial<RequestGroupDto>,
-  ): Promise<RequestGroupDto> {
+  async updateData(id: number, updatedData: Partial<RequestGroupDto>): Promise<RequestGroupDto> {
     const existingGroup = await this.groupsRepository.findById(id);
     if (!existingGroup) {
       throw new NotFoundException(`Group with ID ${id} not found!`);
     }
 
-    const prismaData = this.mapUpdateData(
-      existingGroup.type as 'costs' | 'presents',
-      updatedData,
-    );
-
-    const updatedGroup = await this.groupsRepository.updateData(id, prismaData);
-
-    return this.mapUpdatedGroup(updatedGroup);
+    return this.prisma.$transaction(async (tx) => {
+      await this.processGroupRelations(existingGroup, updatedData, id, tx);
+      
+      const baseData = this.prepareBaseData(updatedData);
+      const updatedGroup = await this.updateGroupData(id, baseData, tx);
+      
+      return this.mapUpdatedGroup(updatedGroup);
+    });
   }
 
-  private mapUpdateData(
-    groupType: 'costs' | 'presents',
-    updatedData: Partial<RequestGroupDto>,
-  ): Record<string, any> {
-    const prismaData: any = {
+  /**
+   * Обрабатывает отношения группы (costs или presents) 
+   * в зависимости от типа группы.
+   */
+  private async processGroupRelations(
+    existingGroup: any, 
+    updatedData: Partial<RequestGroupDto>, 
+    id: number, 
+    tx: any
+  ): Promise<void> {
+    if (existingGroup.type === 'costs' && updatedData.costs?.length) {
+      await this.processCostsRelations(updatedData.costs, id, tx);
+    } else if (existingGroup.type === 'presents' && updatedData.presents?.length) {
+      await this.processPresentsRelations(updatedData.presents, id, tx);
+    }
+  }
+
+  /**
+   * Обрабатывает отношения costs для группы.
+   */
+  private async processCostsRelations(
+    costs: { groupId: number; costId: number }[], 
+    groupId: number, 
+    tx: any
+  ): Promise<void> {
+    console.log('Costs для обновления:', costs);
+    
+    for (const cost of costs) {
+      try {
+        await this.validateCostExists(cost.costId);
+        await this.createCostGroupRelationIfNotExists(groupId, cost.costId, tx);
+      } catch (error) {
+        console.error(`Ошибка при проверке/создании cost ${cost.costId}:`, error);
+        throw error;
+      }
+    }
+  }
+
+  /**
+   * Проверяет существование cost и создаёт связь, если она отсутствует.
+   */
+  private async validateCostExists(costId: number): Promise<void> {
+    const costExists = await this.costsRepository.findById(costId);
+    if (!costExists) {
+      throw new NotFoundException(`Cost with ID ${costId} not found!`);
+    }
+  }
+
+  /**
+   * Создаёт связь между группой и cost, если она не существует.
+   */
+  private async createCostGroupRelationIfNotExists(
+    groupId: number, 
+    costId: number, 
+    tx: any
+  ): Promise<void> {
+    const costGroupExists = await this.prisma.costGroup.findUnique({
+      where: {
+        groupId_costId: {
+          groupId: Number(groupId),
+          costId: costId,
+        },
+      },
+    });
+    
+    if (!costGroupExists) {
+      console.log(`Создаём отсутствующую связь: groupId=${groupId}, costId=${costId}`);
+      await tx.costGroup.create({
+        data: {
+          groupId: Number(groupId),
+          costId: costId,
+        },
+      });
+    }
+  }
+
+  /**
+   * Обрабатывает отношения presents для группы.
+   */
+  private async processPresentsRelations(
+    presents: { groupId: number; presentId: number }[], 
+    groupId: number, 
+    tx: any
+  ): Promise<void> {
+    console.log('Presents для обновления:', presents);
+    
+    for (const present of presents) {
+      try {
+        await this.validatePresentExists(present.presentId);
+        await this.createPresentGroupRelationIfNotExists(groupId, present.presentId, tx);
+      } catch (error) {
+        console.error(`Ошибка при проверке/создании present ${present.presentId}:`, error);
+        throw error;
+      }
+    }
+  }
+
+  /**
+   * Проверяет существование present.
+   */
+  private async validatePresentExists(presentId: number): Promise<void> {
+    const presentExists = await this.presentsRepository.findById(presentId);
+    if (!presentExists) {
+      throw new NotFoundException(`Present with ID ${presentId} not found!`);
+    }
+  }
+
+  /**
+   * Создаёт связь между группой и present, если она не существует.
+   */
+  private async createPresentGroupRelationIfNotExists(
+    groupId: number, 
+    presentId: number, 
+    tx: any
+  ): Promise<void> {
+    const presentGroupExists = await this.prisma.presentGroup.findUnique({
+      where: {
+        groupId_presentId: {
+          groupId: Number(groupId),
+          presentId: presentId,
+        },
+      },
+    });
+    
+    if (!presentGroupExists) {
+      console.log(`Создаём отсутствующую связь: groupId=${groupId}, presentId=${presentId}`);
+      await tx.presentGroup.create({
+        data: {
+          groupId: Number(groupId),
+          presentId: presentId,
+        },
+      });
+    }
+  }
+
+  /**
+   * Подготавливает базовые данные для обновления группы.
+   */
+  private prepareBaseData(updatedData: Partial<RequestGroupDto>): any {
+    const baseData = {
       groupName: updatedData.groupName,
       type: updatedData.type,
       items: updatedData.items,
     };
 
-    if (groupType === 'costs' && updatedData.costs?.length) {
-      prismaData.costs = {
-        connect: updatedData.costs.map((cost) => ({
-          groupId_costId: {
-            groupId: cost.groupId,
-            costId: cost.costId,
-          },
-        })),
-      };
-    }
-
-    if (groupType === 'presents' && updatedData.presents?.length) {
-      prismaData.presents = {
-        connect: updatedData.presents.map((present) => ({
-          groupId_presentId: { // Аналогично для комбинаторного ключа presents
-            groupId: present.groupId,
-            presentId: present.presentId,
-          },
-        })),
-      };
-    }
-
-    Object.keys(prismaData).forEach((key) => {
-      if (prismaData[key] === undefined || prismaData[key]?.length === 0) {
-        delete prismaData[key];
+    // Очищаем undefined поля
+    Object.keys(baseData).forEach((key) => {
+      if (baseData[key] === undefined) {
+        delete baseData[key];
       }
     });
 
-    return prismaData;
+    return baseData;
+  }
+
+  /**
+   * Обновляет данные группы.
+   */
+  private async updateGroupData(id: number, baseData: any, tx: any): Promise<any> {
+    return tx.group.update({
+      where: { id: Number(id) },
+      data: baseData,
+      include: {
+        costs: true,
+        presents: true,
+      },
+    });
   }
 
   private mapUpdatedGroup(updatedGroup: any): RequestGroupDto {
@@ -207,6 +334,4 @@ export class GroupsService extends BaseService<
         : [],
     };
   }
-
-
 }
