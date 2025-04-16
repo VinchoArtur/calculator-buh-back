@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { GroupRequest, RequestGroupDto } from 'src/dtos/groups/group.dto';
 import { GroupsRepository } from 'src/repositories/groups/groups.repository';
 import { BaseService } from '../baseService';
@@ -10,12 +10,15 @@ import { CostRequest } from '../../dtos/costs/costs.dto.';
 import { PresentGroupRepository } from '../../repositories/groups/present-group.repository';
 import { PresentRequest } from '../../dtos/presents/presents.dto';
 import { PrismaService } from '../../modules/prisma/services/prisma.service';
+import { GroupRelationException } from '../../exceptions/group-relation.exception';
 
 @Injectable()
 export class GroupsService extends BaseService<
   RequestGroupDto,
   { id: number }
 > {
+  private readonly logger = new Logger(GroupsService.name);
+  
   constructor(
     private readonly groupsRepository: GroupsRepository,
     private readonly costsRepository: CostsRepository,
@@ -142,29 +145,51 @@ export class GroupsService extends BaseService<
    * основываясь на типе самой группы (type).
    */
   async updateData(id: number, updatedData: Partial<RequestGroupDto>): Promise<RequestGroupDto> {
-    const existingGroup = await this.groupsRepository.findById(id);
-    if (!existingGroup) {
-      throw new NotFoundException(`Group with ID ${id} not found!`);
-    }
+    try {
+      const existingGroup = await this.groupsRepository.findById(id);
+      if (!existingGroup) {
+        throw new NotFoundException(`Group with ID ${id} not found!`);
+      }
 
-    return this.prisma.$transaction(async (tx) => {
-      // Обрабатываем отношения группы
-      await this.processGroupRelations(existingGroup, updatedData, id, tx);
-      
-      // Если предоставлены новые items, синхронизируем связи
-      if (updatedData.items && updatedData.items.length > 0) {
-        await this.syncRelationsWithItems(tx, id, existingGroup.type, updatedData.items);
+      return this.prisma.$transaction(async (tx) => {
+        try {
+          await this.processGroupRelations(existingGroup, updatedData, id, tx);
+          
+          if (updatedData.items && updatedData.items.length > 0) {
+            await this.syncRelationsWithItems(tx, id, existingGroup.type, updatedData.items);
+          }
+          
+          const baseData = this.prepareBaseData(updatedData);
+          
+
+          const updatedGroup = await this.updateGroupData(id, baseData, tx);
+
+          return this.mapUpdatedGroup(updatedGroup);
+        } catch (error) {
+          this.logger.error(
+            `Transaction error updating group ${id}: ${error.message}`,
+            error.stack
+          );
+          throw error;
+        }
+      });
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
       }
       
-      // Подготавливаем базовые данные для обновления
-      const baseData = this.prepareBaseData(updatedData);
-      
-      // Обновляем группу в базе данных
-      const updatedGroup = await this.updateGroupData(id, baseData, tx);
-      
-      // Преобразуем данные в формат ответа
-      return this.mapUpdatedGroup(updatedGroup);
-    });
+      this.logger.error(
+        `Unexpected error updating group ${id}: ${error.message}`, 
+        error.stack
+      );
+      throw new GroupRelationException(
+        'Ошибка при обновлении группы', 
+        { 
+          groupId: id,
+          originalError: error.message 
+        }
+      );
+    }
   }
 
   /**
@@ -192,26 +217,34 @@ export class GroupsService extends BaseService<
     groupId: number, 
     tx: any
   ): Promise<void> {
-    console.log('Costs для обновления:', costs);
+    this.logger.log(`Costs для обновления: ${JSON.stringify(costs)}`);
     
     for (const cost of costs) {
       try {
         await this.validateCostExists(cost.costId);
         await this.createCostGroupRelationIfNotExists(groupId, cost.costId, tx);
       } catch (error) {
-        console.error(`Ошибка при проверке/создании cost ${cost.costId}:`, error);
-        throw error;
+        this.logger.error(`Ошибка при проверке/создании cost ${cost.costId}: ${error.message}`, error.stack);
+        
+        if (error instanceof NotFoundException) {
+          throw error;
+        }
+        
+        throw new GroupRelationException(
+          `Ошибка при связывании группы с cost ${cost.costId}`,
+          { costId: cost.costId, groupId, originalError: error.message }
+        );
       }
     }
   }
 
   /**
-   * Проверяет существование cost и создаёт связь, если она отсутствует.
+   * Проверяет существование cost.
    */
   private async validateCostExists(costId: number): Promise<void> {
     const costExists = await this.costsRepository.findById(costId);
     if (!costExists) {
-      throw new NotFoundException(`Cost with ID ${costId} not found!`);
+      throw new NotFoundException(`Cost с ID ${costId} не найден`);
     }
   }
 
@@ -251,15 +284,23 @@ export class GroupsService extends BaseService<
     groupId: number, 
     tx: any
   ): Promise<void> {
-    console.log('Presents для обновления:', presents);
+    this.logger.log(`Presents для обновления: ${JSON.stringify(presents)}`);
     
     for (const present of presents) {
       try {
         await this.validatePresentExists(present.presentId);
         await this.createPresentGroupRelationIfNotExists(groupId, present.presentId, tx);
       } catch (error) {
-        console.error(`Ошибка при проверке/создании present ${present.presentId}:`, error);
-        throw error;
+        this.logger.error(`Ошибка при проверке/создании present ${present.presentId}: ${error.message}`, error.stack);
+        
+        if (error instanceof NotFoundException) {
+          throw error;
+        }
+        
+        throw new GroupRelationException(
+          `Ошибка при связывании группы с present ${present.presentId}`,
+          { presentId: present.presentId, groupId, originalError: error.message }
+        );
       }
     }
   }
@@ -270,7 +311,7 @@ export class GroupsService extends BaseService<
   private async validatePresentExists(presentId: number): Promise<void> {
     const presentExists = await this.presentsRepository.findById(presentId);
     if (!presentExists) {
-      throw new NotFoundException(`Present with ID ${presentId} not found!`);
+      throw new NotFoundException(`Present с ID ${presentId} не найден`);
     }
   }
 
@@ -304,7 +345,6 @@ export class GroupsService extends BaseService<
 
   /**
    * Синхронизирует связи в базе данных с items.
-   * Удаляет лишние связи, которых нет в items.
    */
   private async syncRelationsWithItems(
     tx: any, 
@@ -312,46 +352,63 @@ export class GroupsService extends BaseService<
     groupType: string, 
     items: number[]
   ): Promise<void> {
-    if (!items || items.length === 0) {
-      return;
-    }
-    
-    const itemsSet = new Set(items.map(id => Number(id)));
-    
-    if (groupType === 'costs') {
-      const existingRelations = await tx.costGroup.findMany({
-        where: { groupId: Number(groupId) }
-      });
+    try {
+      if (!items || items.length === 0) {
+        return;
+      }
       
-      for (const relation of existingRelations) {
-        if (!itemsSet.has(Number(relation.costId))) {
-          await tx.costGroup.delete({
-            where: {
-              groupId_costId: {
-                groupId: Number(groupId),
-                costId: relation.costId
+      const itemsSet = new Set(items.map(id => Number(id)));
+      
+      if (groupType === 'costs') {
+        const existingRelations = await tx.costGroup.findMany({
+          where: { groupId: Number(groupId) }
+        });
+        
+        for (const relation of existingRelations) {
+          if (!itemsSet.has(Number(relation.costId))) {
+            await tx.costGroup.delete({
+              where: {
+                groupId_costId: {
+                  groupId: Number(groupId),
+                  costId: relation.costId
+                }
               }
-            }
-          });
+            });
+          }
+        }
+      } else if (groupType === 'presents') {
+        const existingRelations = await tx.presentGroup.findMany({
+          where: { groupId: Number(groupId) }
+        });
+        
+        for (const relation of existingRelations) {
+          if (!itemsSet.has(Number(relation.presentId))) {
+            await tx.presentGroup.delete({
+              where: {
+                groupId_presentId: {
+                  groupId: Number(groupId),
+                  presentId: relation.presentId
+                }
+              }
+            });
+          }
         }
       }
-    } else if (groupType === 'presents') {
-      const existingRelations = await tx.presentGroup.findMany({
-        where: { groupId: Number(groupId) }
-      });
+    } catch (error) {
+      this.logger.error(
+        `Ошибка при синхронизации связей для группы ${groupId}: ${error.message}`,
+        error.stack
+      );
       
-      for (const relation of existingRelations) {
-        if (!itemsSet.has(Number(relation.presentId))) {
-          await tx.presentGroup.delete({
-            where: {
-              groupId_presentId: {
-                groupId: Number(groupId),
-                presentId: relation.presentId
-              }
-            }
-          });
+      throw new GroupRelationException(
+        `Ошибка при синхронизации элементов группы ${groupId}`,
+        { 
+          groupId,
+          groupType,
+          items,
+          originalError: error.message 
         }
-      }
+      );
     }
   }
 
