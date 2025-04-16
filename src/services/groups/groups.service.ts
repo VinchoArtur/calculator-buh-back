@@ -148,11 +148,21 @@ export class GroupsService extends BaseService<
     }
 
     return this.prisma.$transaction(async (tx) => {
+      // Обрабатываем отношения группы
       await this.processGroupRelations(existingGroup, updatedData, id, tx);
       
+      // Если предоставлены новые items, синхронизируем связи
+      if (updatedData.items && updatedData.items.length > 0) {
+        await this.syncRelationsWithItems(tx, id, existingGroup.type, updatedData.items);
+      }
+      
+      // Подготавливаем базовые данные для обновления
       const baseData = this.prepareBaseData(updatedData);
+      
+      // Обновляем группу в базе данных
       const updatedGroup = await this.updateGroupData(id, baseData, tx);
       
+      // Преобразуем данные в формат ответа
       return this.mapUpdatedGroup(updatedGroup);
     });
   }
@@ -293,6 +303,59 @@ export class GroupsService extends BaseService<
   }
 
   /**
+   * Синхронизирует связи в базе данных с items.
+   * Удаляет лишние связи, которых нет в items.
+   */
+  private async syncRelationsWithItems(
+    tx: any, 
+    groupId: number, 
+    groupType: string, 
+    items: number[]
+  ): Promise<void> {
+    if (!items || items.length === 0) {
+      return;
+    }
+    
+    const itemsSet = new Set(items.map(id => Number(id)));
+    
+    if (groupType === 'costs') {
+      const existingRelations = await tx.costGroup.findMany({
+        where: { groupId: Number(groupId) }
+      });
+      
+      for (const relation of existingRelations) {
+        if (!itemsSet.has(Number(relation.costId))) {
+          await tx.costGroup.delete({
+            where: {
+              groupId_costId: {
+                groupId: Number(groupId),
+                costId: relation.costId
+              }
+            }
+          });
+        }
+      }
+    } else if (groupType === 'presents') {
+      const existingRelations = await tx.presentGroup.findMany({
+        where: { groupId: Number(groupId) }
+      });
+      
+      for (const relation of existingRelations) {
+        if (!itemsSet.has(Number(relation.presentId))) {
+          await tx.presentGroup.delete({
+            where: {
+              groupId_presentId: {
+                groupId: Number(groupId),
+                presentId: relation.presentId
+              }
+            }
+          });
+        }
+      }
+    }
+  }
+
+  /**
    * Подготавливает базовые данные для обновления группы.
    */
   private prepareBaseData(updatedData: Partial<RequestGroupDto>): any {
@@ -302,7 +365,6 @@ export class GroupsService extends BaseService<
       items: updatedData.items,
     };
 
-    // Очищаем undefined поля
     Object.keys(baseData).forEach((key) => {
       if (baseData[key] === undefined) {
         delete baseData[key];
@@ -326,12 +388,41 @@ export class GroupsService extends BaseService<
     });
   }
 
-  private mapUpdatedGroup(updatedGroup: any): RequestGroupDto {
-    return {
-      ...updatedGroup,
-      items: Array.isArray(updatedGroup.items)
-        ? updatedGroup.items.map((item) => Number(item))
-        : [],
-    };
+/**
+ * Преобразует обновленные данные группы в формат ответа.
+ * Фильтрует costs или presents так, чтобы они соответствовали ids в items.
+ */
+private mapUpdatedGroup(updatedGroup: any): RequestGroupDto {
+  const items = Array.isArray(updatedGroup.items)
+    ? updatedGroup.items.map((item) => Number(item))
+    : [];
+
+  const result: RequestGroupDto = {
+    ...updatedGroup,
+    items: items,
+  };
+
+  if (updatedGroup.type === 'costs' && updatedGroup.costs) {
+    result.costs = this.filterRelationsByItems(updatedGroup.costs, items, 'costId');
+    result.presents = [];
+  } else if (updatedGroup.type === 'presents' && updatedGroup.presents) {
+    result.presents = this.filterRelationsByItems(updatedGroup.presents, items, 'presentId');
+    result.costs = [];
   }
+
+  return result;
+}
+
+/**
+ * Фильтрует связи по ID элементов, указанных в items.
+ */
+private filterRelationsByItems(relations: any[], items: number[], idFieldName: string): any[] {
+  if (!items || items.length === 0 || !relations || relations.length === 0) {
+    return [];
+  }
+
+  const itemsSet = new Set(items.map(id => Number(id)));
+  
+  return relations.filter(relation => itemsSet.has(Number(relation[idFieldName])));
+}
 }
